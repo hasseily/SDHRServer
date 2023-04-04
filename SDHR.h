@@ -1,3 +1,6 @@
+// Apple 2 Super Duper High Resolution
+// List of commands and their structs
+
 enum ShdrCmd_e {
 	SDHR_CMD_UPLOAD_DATA = 1,
 	SDHR_CMD_DEFINE_IMAGE_ASSET = 2,
