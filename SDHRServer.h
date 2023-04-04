@@ -1,5 +1,4 @@
-﻿S
-#pragma once
+﻿#pragma once
 
 #include <iostream>
 
