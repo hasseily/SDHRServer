@@ -1,7 +1,5 @@
-﻿// SDHDServer.cpp : Defines the entry point for the application.
-//
-
-#include "SDHDServer.h"
+﻿
+#include "SDHRServer.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
