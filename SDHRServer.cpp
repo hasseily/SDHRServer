@@ -7,7 +7,7 @@
 
 #pragma pack(push, 1)
 struct Packet {
-	uint16_t address;
+	uint16_t addr;
 	uint8_t data;
 	uint8_t pad;
 };
@@ -54,9 +54,16 @@ int main() {
 		while ((bytes_received = recv(client_fd, &packet, sizeof(packet), 0)) > 0) {
 			if (bytes_received == sizeof(packet)) {
 				std::cout << "Received packet:" << std::endl;
-				std::cout << "  address: " << packet.address << std::endl;
-				std::cout << "  data: " << static_cast<unsigned>(packet.data) << std::endl;
-				std::cout << "  pad: " << static_cast<unsigned>(packet.pad) << std::endl;
+				std::cout << "  address: " << std::hex << packet.addr << std::endl;
+				std::cout << "  data: " << std::hex << static_cast<unsigned>(packet.data) << std::endl;
+				std::cout << "  pad: " << std::hex << static_cast<unsigned>(packet.pad) << std::endl;
+
+				switch (packet.addr & 0x0f) {
+				case 0x00:
+					std::cout << "This is a control packet!" << std::endl; break;
+				case 0x01:
+					std::cout << "This is a data packet" << std::endl; break;
+				}
 			}
 			else {
 				std::cerr << "Error receiving data or incomplete data" << std::endl;
