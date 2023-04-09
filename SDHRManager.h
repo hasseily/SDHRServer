@@ -85,6 +85,11 @@ private:
 		uint64_t image_xcount = 0;
 		uint64_t image_ycount = 0;
 		uint8_t* data = NULL;
+		ImageAsset()
+			: image_xcount(0)
+			, image_ycount(0)
+			, data()
+		{}	// Do nothing in constructor
 	};
 
 	struct TilesetRecord {
@@ -92,6 +97,12 @@ private:
 		uint64_t ydim;
 		uint64_t num_entries;
 		uint16_t* tile_data = NULL;  // tiledata is 16-bit RGB
+		TilesetRecord()
+			: xdim(0)
+			, ydim(0)
+			, num_entries(0)
+			, tile_data()
+		{}
 	};
 
 	struct Window {
@@ -109,6 +120,15 @@ private:
 		uint64_t tile_ycount;
 		uint8_t* tilesets = NULL;
 		uint8_t* tile_indexes = NULL;
+		Window()
+			: enabled(0), black_or_wrap(false)
+			, screen_xcount(0), screen_ycount(0)
+			, screen_xbegin(0), screen_ybegin(0)
+			, tile_xbegin(0), tile_ybegin(0)
+			, tile_xdim(0), tile_ydim(0)
+			, tile_xcount(0), tile_ycount(0)
+			, tilesets(), tile_indexes()
+		{}
 	};
 
 	//////////////////////////////////////////////////////////////////////////

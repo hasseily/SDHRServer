@@ -195,10 +195,10 @@ void SDHRManager::Initialize()
 {
 	m_bEnabled = false;
 	error_flag = false;
-	memset(error_str, sizeof(error_str), 0);
-	memset(uploaded_data_region, sizeof(uploaded_data_region), 0);
-	memset(tileset_records, sizeof(tileset_records), 0);
-	memset(windows, sizeof(windows), 0);
+	memset(error_str, 0, sizeof(error_str));
+	memset(uploaded_data_region, 0, sizeof(uploaded_data_region));
+	*tileset_records = {};
+	*windows = {};
 
 	command_buffer.reserve(64 * 1024);
 }
@@ -263,7 +263,7 @@ void SDHRManager::DefineTileset(uint8_t tileset_index, uint16_t num_entries, uin
 	if (r->tile_data) {
 		free(r->tile_data);
 	}
-	memset(r, 0, sizeof(TilesetRecord));
+	*r = {};
 	r->xdim = xdim;
 	r->ydim = ydim;
 	r->num_entries = num_entries;
