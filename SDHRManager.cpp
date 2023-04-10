@@ -6,6 +6,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+// below because "The declaration of a static data member in its class definition is not a definition"
+SDHRManager* SDHRManager::s_instance;
+
 //////////////////////////////////////////////////////////////////////////
 // Commands structs
 //////////////////////////////////////////////////////////////////////////
@@ -285,11 +288,12 @@ void SDHRManager::DefineTileset(uint8_t tileset_index, uint16_t num_entries, uin
 
 /**
  * Commands in the buffer look like:
- * First byte is the command id
+ * First 2 bytes are the command length (excluding these bytes)
+ * 3rd byte is the command id
  * Anything after that is the command's packed struct,
  * for example UpdateWindowEnableCmd.
  * So the buffer of UpdateWindowEnable will look like:
- * {13, 0, 1} to enable window 0
+ * {03, 00, 13, 0, 1} to enable window 0
 */
 
 bool SDHRManager::ProcessCommands(void)
@@ -347,42 +351,15 @@ bool SDHRManager::ProcessCommands(void)
 			if (error_flag) {
 				return false;
 			}
+			std::cout << "SDHR_CMD_UPLOAD_DATA: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME: {
-			if (!CheckCommandLength(p, end, sizeof(DefineImageAssetFilenameCmd))) return false;
-			DefineImageAssetFilenameCmd* cmd = (DefineImageAssetFilenameCmd*)p;
-			if (message_length != sizeof(DefineImageAssetFilenameCmd) + cmd->filename_length) {
-				CommandError("DefineImageAssetFilename data size mismatch");
-				return false;
-			}
-			std::string filename(cmd->filename, cmd->filename + cmd->filename_length);
-			ImageAsset* r = image_assets + cmd->asset_index;
-			if (r->data != NULL) {
-				stbi_image_free(r->data);
-			}
-			r->AssignByFilename(filename.c_str());
-			if (error_flag) {
-				return false;
-			}
+			std::cout << "SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME: Not Implemented." << std::endl;
+			// NOT IMPLEMENTED
 		} break;
 		case SDHR_CMD_UPLOAD_DATA_FILENAME: {
-			if (!CheckCommandLength(p, end, sizeof(UploadDataFilenameCmd))) return false;
-			UploadDataFilenameCmd* cmd = (UploadDataFilenameCmd*)p;
-			if (message_length != sizeof(UploadDataFilenameCmd) + cmd->filename_length) {
-				CommandError("UploadDataFilename data size mismatch");
-				return false;
-			}
-			std::string filename(cmd->filename, cmd->filename + cmd->filename_length);
-			uint64_t data_offset = (uint64_t)cmd->dest_addr_high * 65536 + (uint64_t)cmd->dest_addr_med * 256;
-			std::ifstream f(filename.c_str(), std::ios::binary | std::ios::ate);
-			int64_t fsize = f.tellg();
-			f.seekg(0, std::ios::beg);
-			if (data_offset + fsize > sizeof(uploaded_data_region)) {
-				CommandError("UploadDataFilename attempting to load past top of memory");
-				return false;
-			}
-			uint8_t* p = uploaded_data_region + data_offset;
-			f.read((char*)p, fsize);
+			std::cout << "SDHR_CMD_UPLOAD_DATA_FILENAME: Not Implemented." << std::endl;
+			// NOT IMPLEMENTED
 		} break;
 		case SDHR_CMD_DEFINE_TILESET: {
 			if (!CheckCommandLength(p, end, sizeof(DefineTilesetCmd))) return false;
@@ -400,6 +377,7 @@ bool SDHRManager::ProcessCommands(void)
 			uint8_t* source_p = uploaded_data_region + data_region_offset;
 			ImageAsset* asset = image_assets + cmd->asset_index;
 			DefineTileset(cmd->tileset_index, num_entries, cmd->xdim, cmd->ydim, asset, source_p);
+			std::cout << "SDHR_CMD_DEFINE_TILESET: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_TILESET_IMMEDIATE: {
 			if (!CheckCommandLength(p, end, sizeof(DefineTilesetImmediateCmd))) return false;
@@ -416,6 +394,7 @@ bool SDHRManager::ProcessCommands(void)
 			}
 			ImageAsset* asset = image_assets + cmd->asset_index;
 			DefineTileset(cmd->tileset_index, num_entries, cmd->xdim, cmd->ydim, asset, cmd->data);
+			std::cout << "SDHR_CMD_DEFINE_TILESET_IMMEDIATE: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_WINDOW: {
 			if (!CheckCommandLength(p, end, sizeof(DefineWindowCmd))) return false;
@@ -449,6 +428,7 @@ bool SDHRManager::ProcessCommands(void)
 				free(r->tile_indexes);
 			}
 			r->tile_indexes = (uint8_t*)malloc(r->tile_xcount * r->tile_ycount);
+			std::cout << "SDHR_CMD_DEFINE_WINDOW: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SET_BOTH: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSetBothCmd))) return false;
@@ -481,6 +461,7 @@ bool SDHRManager::ProcessCommands(void)
 					r->tile_indexes[line_offset + tile_x] = tile_index;
 				}
 			}
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SET_BOTH: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SET_UPLOAD: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSetUploadCmd))) return false;
@@ -514,6 +495,7 @@ bool SDHRManager::ProcessCommands(void)
 					r->tile_indexes[line_offset + tile_x] = tile_index;
 				}
 			}
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SET_UPLOAD: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SINGLE_TILESET: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSingleTilesetCmd))) return false;
@@ -545,6 +527,7 @@ bool SDHRManager::ProcessCommands(void)
 					r->tile_indexes[line_offset + tile_x] = tile_index;
 				}
 			}
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SINGLE_TILESET: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SHIFT_TILES: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowShiftTilesCmd))) return false;
@@ -596,6 +579,7 @@ bool SDHRManager::ProcessCommands(void)
 					}
 				}
 			}
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SHIFT_TILES: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSetWindowPositionCmd))) return false;
@@ -603,6 +587,7 @@ bool SDHRManager::ProcessCommands(void)
 			Window* r = windows + cmd->window_index;
 			r->screen_xbegin = cmd->screen_xbegin;
 			r->screen_ybegin = cmd->screen_ybegin;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowAdjustWindowViewCommand))) return false;
@@ -610,6 +595,7 @@ bool SDHRManager::ProcessCommands(void)
 			Window* r = windows + cmd->window_index;
 			r->tile_xbegin = cmd->tile_xbegin;
 			r->tile_ybegin = cmd->tile_ybegin;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_ENABLE: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowEnableCmd))) return false;
@@ -620,9 +606,11 @@ bool SDHRManager::ProcessCommands(void)
 				return false;
 			}
 			r->enabled = cmd->enabled;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_ENABLE: Success!" << std::endl;
 		} break;
 		case SDHR_CMD_READY: {
 			// Okay! We're ready to draw, return true! 
+			std::cout << "SDHR_CMD_READY: Success!" << std::endl;
 			return true;
 		} break;
 		default:
@@ -643,10 +631,10 @@ void SDHRManager::DrawWindowsIntoBuffer(uint8_t* framebuffer)
 		if (!w->enabled) {
 			continue;
 		}
-		for (int64_t tile_y = w->tile_ybegin; tile_y < w->tile_ybegin + w->screen_ycount; ++tile_y) {
+		for (int64_t tile_y = w->tile_ybegin; tile_y < w->tile_ybegin + (int64_t)w->screen_ycount; ++tile_y) {
 			uint64_t tile_yindex = tile_y / w->tile_ydim;
 			uint64_t tile_yoffset = tile_y % w->tile_ydim;
-			for (int64_t tile_x = w->tile_xbegin; tile_x < w->tile_xbegin + w->screen_xcount; ++tile_x) {
+			for (int64_t tile_x = w->tile_xbegin; tile_x < w->tile_xbegin + (int64_t)w->screen_xcount; ++tile_x) {
 				uint64_t tile_xindex = tile_x / w->tile_xdim;
 				uint64_t tile_xoffset = tile_x % w->tile_xdim;
 				uint64_t entry_index = tile_yindex * w->tile_xcount + tile_xindex;

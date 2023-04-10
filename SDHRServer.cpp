@@ -1,11 +1,32 @@
-﻿
-#include "SDHRServer.h"
+﻿#include "SDHRServer.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
 #include "DrawVBlank.h"
 #include "SDHRManager.h"
+
+/**
+ * 
+ * SDHRServer
+ * Main entry point of the application. After initialization of the necessary variables,
+ * it calls the Direct Rendering Manager (DRM) routines once to draw the screen.
+ * Then it runs the main loop in which it listens to a socket.
+ * This socket emulates the Apple 2 card bus, which is essentially
+ * 16 bits of address and 8 bits of data. When a packet is received it calls
+ * the relevant SDHRManager methods unless it's a memory update, in which it updates
+ * a2mem. This allows SDHRServer to "see" the current state of the Apple 2's memory
+ * (only between 0x200 and 0xbfff in main memory)
+ * without being connected physically to the bus. Of course anything _before_ the server
+ * is turned on won't be mapped to a2mem, but it is expected that the server will only be
+ * interested by memory updates after SDHR is activated.
+ * 
+ * When receiving a PROCESS command, it first calls SDHRManager to process all the queued
+ * commands, and then it checks if the double-buffered framebuffer is available. If it is,
+ * it calls the drawing routines in DrawVBlank which schedules a frame flip for the next vblank.
+ * If the framebuffer isn't yet available, it continues waiting for commands.
+ * 
+ */
 
 static SDHRManager* sdhrMgr;
 
@@ -33,6 +54,7 @@ int main() {
 		.page_flip_handler = modeset_page_flip_event,
 	};
 	struct modeset_dev* iter;
+	modeset_initialize();
 
 	// Initialize the Apple 2 memory duplicate
 	// Whenever memory is written from the Apple2
@@ -87,10 +109,12 @@ int main() {
 		{
 			if (bytes_received == sizeof(packet)) 
 			{
+				/*
 				std::cout << "Received packet:" << std::endl;
 				std::cout << "  address: " << std::hex << packet.addr << std::endl;
 				std::cout << "  data: " << std::hex << static_cast<unsigned>(packet.data) << std::endl;
 				std::cout << "  pad: " << std::hex << static_cast<unsigned>(packet.pad) << std::endl;
+				*/
 
 				if ((packet.addr >= 0x200) && (packet.addr <= 0xbfff))
 				{
@@ -107,12 +131,15 @@ int main() {
 					switch (_ctrl)
 					{
 					case SDHR_CTRL_DISABLE:
+						std::cout << "CONTROL: Disable SDHR" << std::endl;
 						sdhrMgr->ToggleSdhr(false);
 						break;
 					case SDHR_CTRL_ENABLE:
+						std::cout << "CONTROL: Enable SDHR" << std::endl;
 						sdhrMgr->ToggleSdhr(true);
 						break;
 					case SDHR_CTRL_RESET:
+						std::cout << "CONTROL: Reset SDHR" << std::endl;
 						sdhrMgr->ResetSdhr();
 						break;
 					case SDHR_CTRL_PROCESS:
@@ -125,6 +152,7 @@ int main() {
 						has flipped, run the framebuffer drawing with the current state and schedule a flip.
 						Rince and repeat.
 						*/
+						std::cout << "CONTROL: Process SDHR" << std::endl;
 						bool processingSucceeded = sdhrMgr->ProcessCommands();
 						// Whether or not the processing worked, clear the buffer. If the processing failed,
 						// the data was corrupt and shouldn't be reprocessed
@@ -175,6 +203,7 @@ int main() {
 	}
 	close(server_fd);
 
+	modeset_cleanup();
 	delete[] a2mem;
 	return 0;
 }

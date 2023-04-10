@@ -26,7 +26,7 @@
  * modeset_open() stays the same.
  */
 
-static int modeset_open(int* out, const char* node)
+int modeset_open(int* out, const char* node)
 {
 	int fd, ret;
 	uint64_t has_dumb;
@@ -55,11 +55,11 @@ static int modeset_open(int* out, const char* node)
  * modeset_prepare() stays the same.
  */
 
-static int modeset_prepare(int fd)
+int modeset_prepare(int fd)
 {
 	drmModeRes* res;
 	drmModeConnector* conn;
-	unsigned int i;
+	int i;
 	struct modeset_dev* dev;
 	int ret;
 
@@ -114,7 +114,7 @@ static int modeset_prepare(int fd)
  * modeset_setup_dev() stays the same.
  */
 
-static int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
+int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
 	struct modeset_dev* dev)
 {
 	int ret;
@@ -175,12 +175,12 @@ static int modeset_setup_dev(int fd, drmModeRes* res, drmModeConnector* conn,
  * modeset_find_crtc() stays the same.
  */
 
-static int modeset_find_crtc(int fd, drmModeRes* res, drmModeConnector* conn,
+int modeset_find_crtc(int fd, drmModeRes* res, drmModeConnector* conn,
 	struct modeset_dev* dev)
 {
 	drmModeEncoder* enc;
-	unsigned int i, j;
-	int32_t crtc;
+	int i, j;
+	uint32_t crtc;
 	struct modeset_dev* iter;
 
 	/* first try the currently conected encoder+crtc */
@@ -256,7 +256,7 @@ static int modeset_find_crtc(int fd, drmModeRes* res, drmModeConnector* conn,
  * modeset_create_fb() stays the same.
  */
 
-static int modeset_create_fb(int fd, struct modeset_buf* buf)
+int modeset_create_fb(int fd, struct modeset_buf* buf)
 {
 	struct drm_mode_create_dumb creq;
 	struct drm_mode_destroy_dumb dreq;
@@ -327,7 +327,7 @@ err_destroy:
  * modeset_destroy_fb() stays the same.
  */
 
-static void modeset_destroy_fb(int fd, struct modeset_buf* buf)
+void modeset_destroy_fb(int fd, struct modeset_buf* buf)
 {
 	struct drm_mode_destroy_dumb dreq;
 
@@ -343,7 +343,7 @@ static void modeset_destroy_fb(int fd, struct modeset_buf* buf)
 	drmIoctl(fd, DRM_IOCTL_MODE_DESTROY_DUMB, &dreq);
 }
 
-static int modeset_initialize()
+int modeset_initialize()
 {
 	int ret;
 	const char* card;
@@ -397,9 +397,8 @@ out_return:
  * allows to wait for outstanding page-flips during cleanup.
  */
 
-static void modeset_page_flip_event(int fd, unsigned int frame,
-	unsigned int sec, unsigned int usec,
-	void* data)
+void modeset_page_flip_event(int fd, unsigned int frame,
+	unsigned int sec, unsigned int usec, void* data)
 {
 	struct modeset_dev* dev = (modeset_dev*)data;
 
@@ -460,7 +459,7 @@ static void modeset_page_flip_event(int fd, unsigned int frame,
  * (you need to press RETURN after each keyboard input to make this work).
  */
 
-static void modeset_draw(int fd)
+void modeset_draw(int fd)
 {
 	int ret;
 	fd_set fds;
@@ -542,10 +541,9 @@ static void modeset_draw(int fd)
  * did, too.
  */
 
-static void modeset_draw_dev(int fd, struct modeset_dev* dev)
+void modeset_draw_dev(int fd, struct modeset_dev* dev)
 {
 	struct modeset_buf* buf;
-	unsigned int j, k, off;
 	int ret;
 
 	// choose the correct buffer
@@ -579,7 +577,7 @@ static void modeset_draw_dev(int fd, struct modeset_dev* dev)
  * a blocking operation, but it's mostly just <16ms so we can ignore that.
  */
 
-static void modeset_cleanup()
+void modeset_cleanup()
 {
 	struct modeset_dev* iter;
 	drmEventContext ev;

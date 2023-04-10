@@ -18,7 +18,7 @@ enum SDHRCtrl_e
 enum SDHRCmd_e {
 	SDHR_CMD_UPLOAD_DATA = 1,
 	SDHR_CMD_DEFINE_IMAGE_ASSET = 2,
-	SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME = 3,
+	SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME = 3,	// NOT RELEVANT, NOT IMPLEMENTED
 	SDHR_CMD_DEFINE_TILESET = 4,
 	SDHR_CMD_DEFINE_TILESET_IMMEDIATE = 5,
 	SDHR_CMD_DEFINE_WINDOW = 6,
@@ -30,7 +30,7 @@ enum SDHRCmd_e {
 	SDHR_CMD_UPDATE_WINDOW_SET_BITMASKS = 12,
 	SDHR_CMD_UPDATE_WINDOW_ENABLE = 13,
 	SDHR_CMD_READY = 14,
-	SDHR_CMD_UPLOAD_DATA_FILENAME = 15,
+	SDHR_CMD_UPLOAD_DATA_FILENAME = 15,			// NOT RELEVANT, NOT IMPLEMENTED
 	SDHR_CMD_UPDATE_WINDOW_SET_UPLOAD = 16,
 };
 
@@ -71,8 +71,17 @@ public:
 	}
 	~SDHRManager();
 private:
+//////////////////////////////////////////////////////////////////////////
+// Singleton pattern
+//////////////////////////////////////////////////////////////////////////
+	void Initialize();
 
-	//////////////////////////////////////////////////////////////////////////
+	static SDHRManager* s_instance;
+	SDHRManager()
+	{
+		Initialize();
+	}
+//////////////////////////////////////////////////////////////////////////
 // Internal state structs
 //////////////////////////////////////////////////////////////////////////
 
@@ -149,14 +158,6 @@ private:
 
 	void DefineTileset(uint8_t tileset_index, uint16_t num_entries, uint8_t xdim, uint8_t ydim,
 		ImageAsset* asset, uint8_t* offsets);
-
-	void Initialize();
-
-	static SDHRManager* s_instance;
-	SDHRManager()
-	{
-		Initialize();
-	}
 
 
 //////////////////////////////////////////////////////////////////////////
