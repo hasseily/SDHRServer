@@ -331,7 +331,7 @@ bool SDHRManager::ProcessCommands(void)
 			if (!DataSizeCheck(dest_offset, data_size)) {
 				return false;
 			}
-			memcpy(a2mem + ((uint16_t)cmd->source_addr_med * 256), uploaded_data_region + dest_offset, data_size);
+			memcpy(uploaded_data_region + dest_offset, a2mem + ((uint16_t)cmd->source_addr_med * 256), data_size);
 		} break;
 		case SDHR_CMD_DEFINE_IMAGE_ASSET: {
 			if (!CheckCommandLength(p, end, sizeof(DefineImageAssetCmd))) return false;
