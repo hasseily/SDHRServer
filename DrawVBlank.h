@@ -61,3 +61,5 @@ int modeset_prepare(int fd);
 void modeset_draw(int fd);
 void modeset_draw_dev(int fd, struct modeset_dev* dev);
 void modeset_cleanup();
+
+modeset_buf* modeset_get_0_front_buffer();
