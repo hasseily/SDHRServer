@@ -41,6 +41,8 @@ struct SDHRPacket {
 int main() {
 	sdhrMgr = SDHRManager::GetInstance();
 
+	uint8_t* a2mem = sdhrMgr->GetApple2MemPtr();
+
 	// commands socket and descriptors
 	int server_fd, client_fd;
 	struct sockaddr_in server_addr, client_addr;
@@ -55,12 +57,6 @@ int main() {
 	};
 	struct modeset_dev* iter;
 	modeset_initialize();
-
-	// Initialize the Apple 2 memory duplicate
-	// Whenever memory is written from the Apple2
-	// in the main bank between $200 and $BFFF it will
-	// be sent through the socket and this buffer will be updated
-	a2mem = new uint8_t[0xbfff];	// anything below $200 is unused
 
 	FD_ZERO(&drm_fds);
 	memset(&evctx, 0, sizeof(evctx));
@@ -152,7 +148,7 @@ int main() {
 						has flipped, run the framebuffer drawing with the current state and schedule a flip.
 						Rince and repeat.
 						*/
-						std::cout << "CONTROL: Process SDHR" << std::endl;
+						//std::cout << "CONTROL: Process SDHR" << std::endl;
 						bool processingSucceeded = sdhrMgr->ProcessCommands();
 						// Whether or not the processing worked, clear the buffer. If the processing failed,
 						// the data was corrupt and shouldn't be reprocessed
@@ -204,7 +200,6 @@ int main() {
 	close(server_fd);
 
 	modeset_cleanup();
-	delete[] a2mem;
 	return 0;
 }
 

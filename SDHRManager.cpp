@@ -204,6 +204,12 @@ void SDHRManager::Initialize()
 	*windows = {};
 
 	command_buffer.reserve(64 * 1024);
+
+	// Initialize the Apple 2 memory duplicate
+	// Whenever memory is written from the Apple2
+	// in the main bank between $200 and $BFFF it will
+	// be sent through the socket and this buffer will be updated
+	a2mem = new uint8_t[0xbfff];	// anything below $200 is unused
 }
 
 SDHRManager::~SDHRManager()
@@ -222,6 +228,7 @@ SDHRManager::~SDHRManager()
 			free(windows[i].tile_indexes);
 		}
 	}
+	delete[] a2mem;
 }
 
 void SDHRManager::AddPacketDataToBuffer(uint8_t data)
@@ -257,6 +264,11 @@ bgra_t SDHRManager::GetPixel(uint16_t vert, uint16_t horz) {
 	rgb.b = (pixel_color & 0x1f) << 3;
 	rgb.a = 0xff;
 	return rgb;
+}
+
+uint8_t* SDHRManager::GetApple2MemPtr()
+{
+	return a2mem;
 }
 
 void SDHRManager::DefineTileset(uint8_t tileset_index, uint16_t num_entries, uint8_t xdim, uint8_t ydim,
@@ -322,7 +334,7 @@ bool SDHRManager::ProcessCommands(void)
 		case SDHR_CMD_UPLOAD_DATA: {
 			if (!CheckCommandLength(p, end, sizeof(UploadDataCmd))) return false;
 			UploadDataCmd* cmd = (UploadDataCmd*)p;
-			if (cmd->num_256b_pages > 256 - cmd->source_addr_med) {
+			if (cmd->num_256b_pages > (256 - cmd->source_addr_med)) {
 				CommandError("UploadData attempting to load past top of memory");
 				return false;
 			}

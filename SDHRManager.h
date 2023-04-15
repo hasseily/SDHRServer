@@ -50,6 +50,7 @@ public:
 	bool ProcessCommands(void);
 	void DrawWindowsIntoBuffer(uint8_t* framebuffer);
 	bgra_t GetPixel(uint16_t vert, uint16_t horz);
+	uint8_t* GetApple2MemPtr();	// Gets the Apple 2 memory pointer
 
 	void ToggleSdhr(bool value) {
 		m_bEnabled = value;
@@ -163,6 +164,8 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // Internal data
 //////////////////////////////////////////////////////////////////////////
+	uint8_t* a2mem;	// The current state of the Apple 2 memory ($0200-$BFFF)
+	
 	bool m_bEnabled;
 
 	static const uint16_t screen_xcount = 640;
