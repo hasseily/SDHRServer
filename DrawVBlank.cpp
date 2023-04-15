@@ -23,6 +23,9 @@
 #include "DrawVBlank.h"
 #include "SDHRManager.h"
 
+struct modeset_dev* modeset_list = NULL;
+int modeset_fd;
+
 //////////////////////////////////////////////////////////////////////////
 // Utilities
 //////////////////////////////////////////////////////////////////////////
@@ -30,7 +33,7 @@
 modeset_buf* modeset_get_0_front_buffer()
 {
 	modeset_dev dev = modeset_list[0];
-	return &dev.bufs[dev.front_buf ^ 1];
+	return &modeset_list[0].bufs[dev.front_buf ^ 1];
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -565,7 +568,7 @@ void modeset_draw_dev(int fd, struct modeset_dev* dev)
 	buf = &dev->bufs[dev->front_buf ^ 1];
 
 	// Draw based on all the internal structs in SDHRManager
-	SDHRManager::GetInstance()->DrawWindowsIntoBuffer(buf->map);
+	SDHRManager::GetInstance()->DrawWindowsIntoBuffer(buf);
 
 	ret = drmModePageFlip(fd, dev->crtc, buf->fb,
 		DRM_MODE_PAGE_FLIP_EVENT, dev);

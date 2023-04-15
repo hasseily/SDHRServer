@@ -3,7 +3,6 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cstring>
-#include "DrawVBlank.h"
 #include "SDHRManager.h"
 
 /**
@@ -51,15 +50,18 @@ int main() {
 	// DRM variables and initialization
 	int ret_drm;
 	fd_set drm_fds;
+	struct modeset_dev* iter;
+	struct timeval v;
+
 	drmEventContext evctx = {
 		.version = 2,	// supports page_flip_handler
 		.page_flip_handler = modeset_page_flip_event,
 	};
-	struct modeset_dev* iter;
+	memset(&v, 0, sizeof(v));
 	modeset_initialize();
 
 	FD_ZERO(&drm_fds);
-	memset(&evctx, 0, sizeof(evctx));
+
 	// Draw once
 	for (iter = modeset_list; iter; iter = iter->next) {
 		modeset_draw_dev(modeset_fd, iter);
@@ -158,8 +160,9 @@ int main() {
 							// We have processed some commands.
 							// Check if FB flipped since last time. If the FB has flipped, draw!
 							// Drawing is done in the modeset_page_flip_event handler
+							std::cout << "Checking for page flip..." << std::endl;
 							FD_SET(modeset_fd, &drm_fds);
-							ret_drm	= select(modeset_fd + 1, &drm_fds, NULL, NULL, NULL);
+							ret_drm	= select(modeset_fd, &drm_fds, NULL, NULL, &v);
 							if (ret_drm < 0)
 							{
 								fprintf(stderr, "select() failed with %d: %m\n", errno);
@@ -169,6 +172,7 @@ int main() {
 							{
 								// Page flip has happened, the FD is readable again
 								// We can now trigger a framebuffer draw
+								std::cout << "Page flip happened! We can draw." << std::endl;
 								drmHandleEvent(modeset_fd, &evctx);
 							}
 						}

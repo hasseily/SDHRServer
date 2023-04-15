@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <vector>
+#include "DrawVBlank.h"
 
 enum SDHRCtrl_e
 {
@@ -48,8 +49,8 @@ public:
 	void AddPacketDataToBuffer(uint8_t data);
 	void ClearBuffer();
 	bool ProcessCommands(void);
-	void DrawWindowsIntoBuffer(uint8_t* framebuffer);
-	bgra_t GetPixel(uint16_t vert, uint16_t horz);
+	void DrawWindowsIntoBuffer(modeset_buf* framebuffer);
+	uint32_t ARGB555_to_ARGB888(uint16_t argb555);
 	uint8_t* GetApple2MemPtr();	// Gets the Apple 2 memory pointer
 
 	void ToggleSdhr(bool value) {

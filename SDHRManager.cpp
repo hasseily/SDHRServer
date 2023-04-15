@@ -1,5 +1,4 @@
 #include "SDHRManager.h"
-#include "SDHRServer.h"
 #include <cstring>
 #include <iostream>
 #include <fstream>
@@ -244,6 +243,7 @@ void SDHRManager::ClearBuffer()
 void SDHRManager::CommandError(const char* err) {
 	strcpy(error_str, err);
 	error_flag = true;
+	std::cerr << "Command Error: " << error_str << std::endl;
 }
 
 bool SDHRManager::CheckCommandLength(uint8_t* p, uint8_t* e, size_t sz) {
@@ -255,15 +255,19 @@ bool SDHRManager::CheckCommandLength(uint8_t* p, uint8_t* e, size_t sz) {
 	return true;
 }
 
-bgra_t SDHRManager::GetPixel(uint16_t vert, uint16_t horz) {
-	uint64_t pixel_offset = (uint64_t)vert * screen_xcount + horz;
-	bgra_t rgb = { 0 };
-	uint16_t pixel_color = screen_color[pixel_offset];
-	rgb.r = ((pixel_color >> 10) & 0x1f) << 3;
-	rgb.g = ((pixel_color >> 5) & 0x1f) << 3;
-	rgb.b = (pixel_color & 0x1f) << 3;
-	rgb.a = 0xff;
-	return rgb;
+uint32_t SDHRManager::ARGB555_to_ARGB888(uint16_t argb555) {
+	uint8_t r = (argb555 >> 10) & 0x1F;
+	uint8_t g = (argb555 >> 5) & 0x1F;
+	uint8_t b = argb555 & 0x1F;
+	uint8_t a = (argb555 & 0x8000);	// alpha in RGB555 is all or nothing
+
+	uint32_t r888 = (r << 3) | (r >> 2);
+	uint32_t g888 = (g << 3) | (g >> 2);
+	uint32_t b888 = (b << 3) | (b >> 2);
+	uint32_t a888 = a * 0xFF;
+
+	uint32_t argb888 = (a888 << 24) | (r888 << 16) | (g888 << 8) | b888;
+	return argb888;
 }
 
 uint8_t* SDHRManager::GetApple2MemPtr()
@@ -319,9 +323,10 @@ bool SDHRManager::ProcessCommands(void)
 	uint8_t* end = begin + command_buffer.size();
 	uint8_t* p = begin;
 
-	while (begin < end) {
+	while (p < end) {
 		// Header (2 bytes) giving the size in bytes of the command
 		if (!CheckCommandLength(p, end, 2)) {
+			std::cerr << "CheckCommandLength failed!" << std::endl;
 			return false;
 		}
 		uint16_t message_length = *((uint16_t*)p);
@@ -341,6 +346,7 @@ bool SDHRManager::ProcessCommands(void)
 			uint64_t dest_offset = DataOffset(0, cmd->dest_addr_med, cmd->dest_addr_high);
 			uint64_t data_size = (uint64_t)256 * cmd->num_256b_pages;
 			if (!DataSizeCheck(dest_offset, data_size)) {
+				std::cerr << "DataSizeCheck failed!" << std::endl;
 				return false;
 			}
 			memcpy(uploaded_data_region + dest_offset, a2mem + ((uint16_t)cmd->source_addr_med * 256), data_size);
@@ -361,6 +367,7 @@ bool SDHRManager::ProcessCommands(void)
 			}
 			r->AssignByMemory(uploaded_data_region + upload_start_addr, upload_data_size);
 			if (error_flag) {
+				std::cerr << "AssignByMemory failed!" << std::endl;
 				return false;
 			}
 			std::cout << "SDHR_CMD_UPLOAD_DATA: Success!" << std::endl;
@@ -623,6 +630,7 @@ bool SDHRManager::ProcessCommands(void)
 		case SDHR_CMD_READY: {
 			// Okay! We're ready to draw, return true! 
 			std::cout << "SDHR_CMD_READY: Success!" << std::endl;
+			command_buffer.clear();
 			return true;
 		} break;
 		default:
@@ -635,8 +643,9 @@ bool SDHRManager::ProcessCommands(void)
 	return false;
 }
 
-void SDHRManager::DrawWindowsIntoBuffer(uint8_t* framebuffer)
+void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 {
+	std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
 	// Draw the windows into the passed-in framebuffer;
 	for (uint16_t window_index = 0; window_index < 256; ++window_index) {
 		Window* w = windows + window_index;
@@ -675,9 +684,10 @@ void SDHRManager::DrawWindowsIntoBuffer(uint8_t* framebuffer)
 					// destination pixel offscreen, do not draw
 					continue;
 				}
-				int64_t screen_offset = screen_y * screen_xcount + screen_x;
-				framebuffer[screen_offset] = pixel_color;
+				int64_t screen_offset = (framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t));
+				*(uint32_t*)&framebuffer[screen_offset] = ARGB555_to_ARGB888(pixel_color);
 			}
 		}
+		std::cout << "Drew into buffer window " << window_index << std::endl;
 	}
 }

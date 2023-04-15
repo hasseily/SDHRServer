@@ -1,3 +1,7 @@
+#pragma once
+#ifndef DRAWVBLANK_H
+#define DRAWVBLANK_H
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -45,8 +49,8 @@ struct modeset_dev {
 	bool cleanup;
 };
 
-static struct modeset_dev* modeset_list = NULL;
-static int modeset_fd;
+extern struct modeset_dev* modeset_list;
+extern int modeset_fd;
 
 void modeset_page_flip_event(int fd, unsigned int frame,
 	unsigned int sec, unsigned int usec, void* data);
@@ -63,3 +67,5 @@ void modeset_draw_dev(int fd, struct modeset_dev* dev);
 void modeset_cleanup();
 
 modeset_buf* modeset_get_0_front_buffer();
+
+#endif //DRAWVBLANK_H
