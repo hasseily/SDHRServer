@@ -396,7 +396,7 @@ bool SDHRManager::ProcessCommands(void)
 			uint8_t* source_p = uploaded_data_region + data_region_offset;
 			ImageAsset* asset = image_assets + cmd->asset_index;
 			DefineTileset(cmd->tileset_index, num_entries, cmd->xdim, cmd->ydim, asset, source_p);
-			std::cout << "SDHR_CMD_DEFINE_TILESET: Success!" << std::endl;
+			std::cout << "SDHR_CMD_DEFINE_TILESET: Success! " << (uint32_t)cmd->tileset_index << ';'<< (uint32_t)num_entries << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_TILESET_IMMEDIATE: {
 			if (!CheckCommandLength(p, end, sizeof(DefineTilesetImmediateCmd))) return false;
@@ -413,7 +413,7 @@ bool SDHRManager::ProcessCommands(void)
 			}
 			ImageAsset* asset = image_assets + cmd->asset_index;
 			DefineTileset(cmd->tileset_index, num_entries, cmd->xdim, cmd->ydim, asset, cmd->data);
-			std::cout << "SDHR_CMD_DEFINE_TILESET_IMMEDIATE: Success!" << std::endl;
+			std::cout << "SDHR_CMD_DEFINE_TILESET_IMMEDIATE: Success! " << (uint32_t)cmd->tileset_index << ';' << (uint32_t)num_entries << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_WINDOW: {
 			if (!CheckCommandLength(p, end, sizeof(DefineWindowCmd))) return false;
@@ -447,7 +447,8 @@ bool SDHRManager::ProcessCommands(void)
 				free(r->tile_indexes);
 			}
 			r->tile_indexes = (uint8_t*)malloc(r->tile_xcount * r->tile_ycount);
-			std::cout << "SDHR_CMD_DEFINE_WINDOW: Success!" << std::endl;
+			std::cout << "SDHR_CMD_DEFINE_WINDOW: Success! " 
+				<< cmd->window_index << ';' << (uint32_t)r->tile_xcount << ';' << (uint32_t)r->tile_ycount << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SET_BOTH: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSetBothCmd))) return false;
@@ -598,7 +599,8 @@ bool SDHRManager::ProcessCommands(void)
 					}
 				}
 			}
-			std::cout << "SDHR_CMD_UPDATE_WINDOW_SHIFT_TILES: Success!" << std::endl;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SHIFT_TILES: Success! " 
+				<< (uint32_t)cmd->window_index << ';' << (uint32_t)cmd->x_dir << ';' << (uint32_t)cmd->y_dir << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowSetWindowPositionCmd))) return false;
@@ -606,7 +608,8 @@ bool SDHRManager::ProcessCommands(void)
 			Window* r = windows + cmd->window_index;
 			r->screen_xbegin = cmd->screen_xbegin;
 			r->screen_ybegin = cmd->screen_ybegin;
-			std::cout << "SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION: Success!" << std::endl;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION: Success! "
+				<< (uint32_t)cmd->window_index << ';' << (uint32_t)cmd->screen_xbegin << ';' << (uint32_t)cmd->screen_ybegin << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowAdjustWindowViewCommand))) return false;
@@ -614,7 +617,8 @@ bool SDHRManager::ProcessCommands(void)
 			Window* r = windows + cmd->window_index;
 			r->tile_xbegin = cmd->tile_xbegin;
 			r->tile_ybegin = cmd->tile_ybegin;
-			std::cout << "SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW: Success!" << std::endl;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW: Success! "
+				<< (uint32_t)cmd->window_index << ';' << (uint32_t)cmd->tile_xbegin << ';' << (uint32_t)cmd->tile_ybegin << std::endl;
 		} break;
 		case SDHR_CMD_UPDATE_WINDOW_ENABLE: {
 			if (!CheckCommandLength(p, end, sizeof(UpdateWindowEnableCmd))) return false;
@@ -625,13 +629,8 @@ bool SDHRManager::ProcessCommands(void)
 				return false;
 			}
 			r->enabled = cmd->enabled;
-			std::cout << "SDHR_CMD_UPDATE_WINDOW_ENABLE: Success!" << std::endl;
-		} break;
-		case SDHR_CMD_READY: {
-			// Okay! We're ready to draw, return true! 
-			std::cout << "SDHR_CMD_READY: Success!" << std::endl;
-			command_buffer.clear();
-			return true;
+			std::cout << "SDHR_CMD_UPDATE_WINDOW_ENABLE: Success! "
+				<< (uint32_t)cmd->window_index << std::endl;
 		} break;
 		default:
 			CommandError("unrecognized command");
@@ -639,13 +638,14 @@ bool SDHRManager::ProcessCommands(void)
 		}
 		p += message_length;
 	}
-	CommandError("reached end of command buffer without READY");
-	return false;
+	// we're ready to draw
+	command_buffer.clear();
+	return true;
 }
 
 void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 {
-	std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
+	// std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
 	// Draw the windows into the passed-in framebuffer;
 	for (uint16_t window_index = 0; window_index < 256; ++window_index) {
 		Window* w = windows + window_index;
@@ -685,9 +685,9 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 					continue;
 				}
 				int64_t screen_offset = (framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t));
-				*(uint32_t*)&framebuffer[screen_offset] = ARGB555_to_ARGB888(pixel_color);
+				*(uint32_t*)&framebuffer->map[screen_offset] = ARGB555_to_ARGB888(pixel_color);
 			}
 		}
-		std::cout << "Drew into buffer window " << window_index << std::endl;
+		// std::cout << "Drew into buffer window " << window_index << std::endl;
 	}
 }

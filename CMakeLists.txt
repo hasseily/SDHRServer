@@ -12,7 +12,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBDRM REQUIRED IMPORTED_TARGET libdrm)
 
 # Add source to this project's executable.
-add_executable (SDHRServer "SDHRServer.cpp" "DrawVBlank.cpp" "SDHRManager.cpp")
+add_executable (SDHRServer "SDHRServer.cpp" "DrawVBlank_implem.h" "SDHRManager.cpp")
 target_link_libraries(SDHRServer PkgConfig::LIBDRM)
 target_include_directories(SDHRServer PUBLIC "/usr/include/libdrm;/usr/include")
 

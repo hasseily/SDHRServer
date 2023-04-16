@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <cstring>
 #include "SDHRManager.h"
+#include "DrawVBlank_implem.h"
 
 /**
  * 
@@ -162,7 +163,7 @@ int main() {
 							// Drawing is done in the modeset_page_flip_event handler
 							std::cout << "Checking for page flip..." << std::endl;
 							FD_SET(modeset_fd, &drm_fds);
-							ret_drm	= select(modeset_fd, &drm_fds, NULL, NULL, &v);
+							ret_drm	= select(modeset_fd + 1, &drm_fds, NULL, NULL, NULL);
 							if (ret_drm < 0)
 							{
 								fprintf(stderr, "select() failed with %d: %m\n", errno);
