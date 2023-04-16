@@ -200,7 +200,9 @@ int main() {
 			std::cerr << "Error receiving data" << std::endl;
 		}
 
+		std::cerr << "Client Closing" << std::endl;
 		close(client_fd);
+		std::cerr << "    Client Closed" << std::endl;
 	}
 	close(server_fd);
 

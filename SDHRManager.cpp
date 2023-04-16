@@ -585,7 +585,7 @@ bool SDHRManager::ProcessCommands(void)
 					uint64_t prev_line_offset = line_offset - r->tile_xcount;
 					for (uint64_t x_index = 0; x_index < r->tile_xcount; ++x_index) {
 						r->tilesets[prev_line_offset + x_index] = r->tilesets[line_offset + x_index];
-						r->tile_indexes[prev_line_offset + x_index] = r->tilesets[line_offset + x_index];
+						r->tile_indexes[prev_line_offset + x_index] = r->tile_indexes[line_offset + x_index];
 					}
 				}
 			}
@@ -595,7 +595,7 @@ bool SDHRManager::ProcessCommands(void)
 					uint64_t prev_line_offset = line_offset - r->tile_xcount;
 					for (uint64_t x_index = 0; x_index < r->tile_xcount; ++x_index) {
 						r->tilesets[line_offset + x_index] = r->tilesets[prev_line_offset + x_index];
-						r->tile_indexes[line_offset + x_index] = r->tilesets[prev_line_offset + x_index];
+						r->tile_indexes[line_offset + x_index] = r->tile_indexes[prev_line_offset + x_index];
 					}
 				}
 			}
