@@ -161,8 +161,8 @@ void SDHRManager::ImageAsset::AssignByMemory(const uint8_t* buffer, uint64_t siz
 	image_ycount = height;
 }
 
-void SDHRManager::ImageAsset::ExtractTile(uint16_t* tile_p, uint16_t tile_xdim, uint16_t tile_ydim, uint64_t xsource, uint64_t ysource) {
-	uint16_t* dest_p = tile_p;
+void SDHRManager::ImageAsset::ExtractTile(uint32_t* tile_p, uint16_t tile_xdim, uint16_t tile_ydim, uint64_t xsource, uint64_t ysource) {
+	uint32_t* dest_p = tile_p;
 	if (xsource + tile_xdim > image_xcount ||
 		ysource + tile_ydim > image_ycount) {
 		SDHRManager::GetInstance()->CommandError("ExtractTile out of bounds");
@@ -178,11 +178,11 @@ void SDHRManager::ImageAsset::ExtractTile(uint16_t* tile_p, uint16_t tile_xdim, 
 			uint8_t g = data[pixel_offset + 1];
 			uint8_t b = data[pixel_offset + 2];
 			uint8_t a = data[pixel_offset + 3];
-			uint16_t dest_pixel = 0;
-			dest_pixel |= (a & 0x80) ? 0x8000 : 0x0;
-			dest_pixel |= (r >> 3) << 10;
-			dest_pixel |= (g >> 3) << 5;
-			dest_pixel |= (b >> 3);
+			uint32_t dest_pixel = 0;
+			dest_pixel |= a << 24;
+			dest_pixel |= r << 16;
+			dest_pixel |= g << 8;
+			dest_pixel |= b;
 			*dest_p = dest_pixel;
 			++dest_p;
 		}
@@ -277,7 +277,7 @@ uint8_t* SDHRManager::GetApple2MemPtr()
 
 void SDHRManager::DefineTileset(uint8_t tileset_index, uint16_t num_entries, uint8_t xdim, uint8_t ydim,
 	ImageAsset* asset, uint8_t* offsets) {
-	uint64_t store_data_size = (uint64_t)xdim * ydim * 2 * num_entries;
+	uint64_t store_data_size = (uint64_t)xdim * ydim * sizeof(uint32_t) * num_entries;
 	TilesetRecord* r = tileset_records + tileset_index;
 	if (r->tile_data) {
 		free(r->tile_data);
@@ -286,10 +286,10 @@ void SDHRManager::DefineTileset(uint8_t tileset_index, uint16_t num_entries, uin
 	r->xdim = xdim;
 	r->ydim = ydim;
 	r->num_entries = num_entries;
-	r->tile_data = (uint16_t*)malloc(store_data_size);
+	r->tile_data = (uint32_t*)malloc(store_data_size);
 
 	uint8_t* offset_p = offsets;
-	uint16_t* dest_p = r->tile_data;
+	uint32_t* dest_p = r->tile_data;
 	for (uint64_t i = 0; i < num_entries; ++i) {
 		uint64_t xoffset = *((uint16_t*)offset_p);
 		offset_p += 2;
@@ -667,20 +667,23 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 				uint64_t entry_index = tile_yindex * w->tile_xcount + tile_xindex;
 				TilesetRecord* t = tileset_records + w->tilesets[entry_index];
 				uint64_t tile_index = w->tile_indexes[entry_index];
-				uint16_t pixel_color;
+				// uint16_t pixel_color;
 				if (w->black_or_wrap == 0 &&
 					(tile_yindex < 0 || tile_yindex >= w->tile_ycount ||
 						tile_xindex < 0 || tile_xindex >= w->tile_xcount)) {
-					pixel_color = 0x8000; // outside of tile bounds, pixel is black
+					// pixel_color = 0x8000; // outside of tile bounds, pixel is black
+					pixel_color_argb888 = 0x0;
 				}
 				else {
 					while (tile_yindex < 0) tile_yindex += w->tile_ycount;
 					while (tile_yindex >= w->tile_ycount) tile_yindex -= w->tile_ycount;
 					while (tile_xindex < 0) tile_xindex -= w->tile_xcount;
 					while (tile_xindex >= w->tile_xcount) tile_xindex -= w->tile_xcount;
-					pixel_color = t->tile_data[tile_index * t->xdim * t->ydim + tile_yoffset * t->xdim + tile_xoffset];
+					// pixel_color = t->tile_data[tile_index * t->xdim * t->ydim + tile_yoffset * t->xdim + tile_xoffset];
+					pixel_color_argb888 = t->tile_data[tile_index * t->xdim * t->ydim + tile_yoffset * t->xdim + tile_xoffset];
 				}
-				if ((pixel_color & 0x8000) == 0) {
+				// if ((pixel_color & 0x8000) == 0) {
+				if ((pixel_color_argb888 & 0xFF000000) == 0) {
 					continue; // zero alpha, don'd draw
 				}
 				// now, where on the screen to put it?
@@ -690,8 +693,7 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 					// destination pixel offscreen, do not draw
 					continue;
 				}
-				pixel_color_argb888 = ARGB555_to_ARGB888(pixel_color);
-				// *(uint32_t*)&framebuffer->map[screen_offset] = pixel_color_argb888;
+				//pixel_color_argb888 = ARGB555_to_ARGB888(pixel_color);
 				int64_t screen_offset = ((framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t)));
 				// Scale the video by the integer _scale
 				for (size_t i = 0; i < _scale; i++)
