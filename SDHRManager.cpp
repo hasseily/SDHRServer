@@ -646,6 +646,11 @@ bool SDHRManager::ProcessCommands(void)
 void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 {
 	// std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
+	// Set the scaling factor to fullscreen the video
+	auto _scalew = framebuffer->width / screen_xcount;
+	auto _scaleh = framebuffer->height / screen_ycount;
+	auto _scale = (_scaleh < _scalew ? _scaleh : _scalew);
+
 	// Draw the windows into the passed-in framebuffer;
 	uint32_t pixel_color_argb888 = 0;
 	for (uint16_t window_index = 0; window_index < 256; ++window_index) {
@@ -688,12 +693,12 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 				pixel_color_argb888 = ARGB555_to_ARGB888(pixel_color);
 				// *(uint32_t*)&framebuffer->map[screen_offset] = pixel_color_argb888;
 				int64_t screen_offset = ((framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t)));
-				// Scale 3x
-				for (size_t i = 0; i < 3; i++)
+				// Scale the video by the integer _scale
+				for (size_t i = 0; i < _scale; i++)
 				{
-					for (size_t j = 0; j < 3; j++)
+					for (size_t j = 0; j < _scale; j++)
 					{
-						*(uint32_t*)&framebuffer->map[(screen_offset * 3) + (i * sizeof(uint32_t)) + (j * framebuffer->stride)] = pixel_color_argb888;
+						*(uint32_t*)&framebuffer->map[(screen_offset * _scale) + (i * sizeof(uint32_t)) + (j * framebuffer->stride)] = pixel_color_argb888;
 					}
 				}
 			}
