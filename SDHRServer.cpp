@@ -161,7 +161,7 @@ int main() {
 							// We have processed some commands.
 							// Check if FB flipped since last time. If the FB has flipped, draw!
 							// Drawing is done in the modeset_page_flip_event handler
-							std::cout << "Checking for page flip..." << std::endl;
+							// std::cout << "Checking for page flip..." << std::endl;
 							FD_SET(modeset_fd, &drm_fds);
 							ret_drm	= select(modeset_fd + 1, &drm_fds, NULL, NULL, NULL);
 							if (ret_drm < 0)
@@ -173,7 +173,7 @@ int main() {
 							{
 								// Page flip has happened, the FD is readable again
 								// We can now trigger a framebuffer draw
-								std::cout << "Page flip happened! We can draw." << std::endl;
+								// std::cout << "Page flip happened! We can draw." << std::endl;
 								drmHandleEvent(modeset_fd, &evctx);
 							}
 						}
