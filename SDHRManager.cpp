@@ -647,6 +647,7 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 {
 	// std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
 	// Draw the windows into the passed-in framebuffer;
+	uint32_t pixel_color_argb888 = 0;
 	for (uint16_t window_index = 0; window_index < 256; ++window_index) {
 		Window* w = windows + window_index;
 		if (!w->enabled) {
@@ -684,8 +685,17 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 					// destination pixel offscreen, do not draw
 					continue;
 				}
-				int64_t screen_offset = (framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t));
-				*(uint32_t*)&framebuffer->map[screen_offset] = ARGB555_to_ARGB888(pixel_color);
+				pixel_color_argb888 = ARGB555_to_ARGB888(pixel_color);
+				// *(uint32_t*)&framebuffer->map[screen_offset] = pixel_color_argb888;
+				int64_t screen_offset = ((framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t)));
+				// Scale 3x
+				for (size_t i = 0; i < 3; i++)
+				{
+					for (size_t j = 0; j < 3; j++)
+					{
+						*(uint32_t*)&framebuffer->map[(screen_offset * 3) + (i * sizeof(uint32_t)) + (j * framebuffer->stride)] = pixel_color_argb888;
+					}
+				}
 			}
 		}
 		// std::cout << "Drew into buffer window " << window_index << std::endl;
