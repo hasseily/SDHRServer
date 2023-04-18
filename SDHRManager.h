@@ -23,8 +23,8 @@ enum SDHRCmd_e {
 	SDHR_CMD_DEFINE_TILESET = 4,
 	SDHR_CMD_DEFINE_TILESET_IMMEDIATE = 5,
 	SDHR_CMD_DEFINE_WINDOW = 6,
-	SDHR_CMD_UPDATE_WINDOW_SET_BOTH = 7,
-	SDHR_CMD_UPDATE_WINDOW_SINGLE_TILESET = 8,
+	SDHR_CMD_UPDATE_WINDOW_SET_IMMEDIATE = 7,
+	// SDHR_CMD_UPDATE_WINDOW_SINGLE_TILESET = 8,
 	SDHR_CMD_UPDATE_WINDOW_SHIFT_TILES = 9,
 	SDHR_CMD_UPDATE_WINDOW_SET_WINDOW_POSITION = 10,
 	SDHR_CMD_UPDATE_WINDOW_ADJUST_WINDOW_VIEW = 11,
@@ -89,9 +89,11 @@ private:
 
 	struct ImageAsset {
 		void AssignByFilename(const char* filename);	// currently unused
-		void AssignByMemory(const uint8_t* buffer, uint64_t size);
-		void ExtractTile(uint32_t* tile_p,
-			uint16_t tile_xdim, uint16_t tile_ydim, uint64_t xsource, uint64_t ysource);
+		void AssignByMemory(SDHRManager* owner, const uint8_t* buffer, uint64_t size);
+		void ExtractTile(SDHRManager* owner, uint32_t* tile_p,
+			uint16_t tile_xdim, uint16_t tile_ydim, 
+			uint64_t xsource, uint64_t ysource);
+
 		// image assets are full 32-bit bitmap files, uploaded from PNG
 		uint64_t image_xcount = 0;
 		uint64_t image_ycount = 0;
@@ -107,7 +109,7 @@ private:
 		uint64_t xdim;
 		uint64_t ydim;
 		uint64_t num_entries;
-		uint32_t* tile_data = NULL;  // tiledata is 32-bit RGB
+		uint32_t* tile_data = NULL;  // tiledata is 32-bit RGBA
 		TilesetRecord()
 			: xdim(0)
 			, ydim(0)
@@ -179,8 +181,4 @@ private:
 	ImageAsset image_assets[256];
 	TilesetRecord tileset_records[256];
 	Window windows[256];
-	// color of every byte on screen
-	// TODO: This should be just the correct framebuffer
-	uint16_t screen_color[screen_xcount * screen_ycount];
-
 };
