@@ -233,16 +233,20 @@ void SDHRManager::Initialize()
 	error_flag = false;
 	memset(error_str, 0, sizeof(error_str));
 	memset(uploaded_data_region, 0, sizeof(uploaded_data_region));
+	*image_assets = {};
 	*tileset_records = {};
 	*windows = {};
 
+	command_buffer.clear();
 	command_buffer.reserve(64 * 1024);
 
 	// Initialize the Apple 2 memory duplicate
 	// Whenever memory is written from the Apple2
 	// in the main bank between $200 and $BFFF it will
 	// be sent through the socket and this buffer will be updated
-	a2mem = new uint8_t[0xbfff];	// anything below $200 is unused
+	if (a2mem == NULL)
+		a2mem = new uint8_t[0xbfff];	// anything below $200 is unused
+	memset(a2mem, 0, 0xbfff);
 }
 
 SDHRManager::~SDHRManager()
@@ -359,6 +363,8 @@ bool SDHRManager::ProcessCommands(void)
 	uint8_t* end = begin + command_buffer.size();
 	uint8_t* p = begin;
 
+	// std::cerr << "Command buffer size: " << command_buffer.size() << std::endl;
+
 	while (p < end) {
 		// Header (2 bytes) giving the size in bytes of the command
 		if (!CheckCommandLength(p, end, 2)) {
@@ -389,6 +395,7 @@ bool SDHRManager::ProcessCommands(void)
 				<< std::endl;
 			*/
 			memcpy(uploaded_data_region + dest_offset, a2mem + ((uint16_t)cmd->source_addr), data_size);
+			// std::cout << "SDHR_CMD_UPLOAD_DATA: Success: " << std::hex << data_size << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_IMAGE_ASSET: {
 			if (!CheckCommandLength(p, end, sizeof(DefineImageAssetCmd))) return false;
@@ -406,7 +413,7 @@ bool SDHRManager::ProcessCommands(void)
 				std::cerr << "AssignByMemory failed!" << std::endl;
 				return false;
 			}
-			std::cout << "SDHR_CMD_UPLOAD_DATA: Success!" << std::endl;
+			std::cout << "SDHR_CMD_DEFINE_IMAGE_ASSET: Success:" << r->image_xcount << " x " << r->image_ycount << std::endl;
 		} break;
 		case SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME: {
 			std::cout << "SDHR_CMD_DEFINE_IMAGE_ASSET_FILENAME: Not Implemented." << std::endl;

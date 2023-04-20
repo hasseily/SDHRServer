@@ -28,6 +28,9 @@
  * 
  */
 
+#define CXSDHR_CTRL 0xC0B0	// SDHR command
+#define CXSDHR_DATA 0xC0B1	// SDHR data
+
 static SDHRManager* sdhrMgr;
 
 #pragma pack(push, 1)
@@ -121,6 +124,12 @@ int main() {
 					a2mem[packet.addr] = packet.data;
 					continue;
 				}
+				if ((packet.addr != CXSDHR_CTRL) && (packet.addr != CXSDHR_DATA))
+				{
+					// BAD PACKET TYPE
+					std::cerr << "BAD PACKET! addr " << std::hex << packet.addr << ", data " << packet.data << std::endl;
+					continue;
+				}
 				SDHRCtrl_e _ctrl;
 				switch (packet.addr & 0x0f) 
 				{
@@ -151,7 +160,7 @@ int main() {
 						has flipped, run the framebuffer drawing with the current state and schedule a flip.
 						Rince and repeat.
 						*/
-						//std::cout << "CONTROL: Process SDHR" << std::endl;
+						// std::cout << "CONTROL: Process SDHR" << std::endl;
 						bool processingSucceeded = sdhrMgr->ProcessCommands();
 						// Whether or not the processing worked, clear the buffer. If the processing failed,
 						// the data was corrupt and shouldn't be reprocessed
