@@ -699,6 +699,13 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 			uint64_t tile_yindex = adj_tile_y / w->tile_ydim;
 			uint64_t tile_yoffset = adj_tile_y % w->tile_ydim;
 			for (int64_t tile_x = w->tile_xbegin; tile_x < w->tile_xbegin + (int64_t)w->screen_xcount; ++tile_x) {
+				// check if destination pixel is offscreen
+				int64_t screen_y = tile_y + w->screen_ybegin - w->tile_ybegin;
+				int64_t screen_x = tile_x + w->screen_xbegin - w->tile_xbegin;
+				if (screen_x < 0 || screen_y < 0 || screen_x > screen_xcount || screen_y > screen_ycount) {
+					// destination pixel is offscreen, do not draw
+					continue;
+				}
 				int64_t adj_tile_x = tile_x;
 				int64_t tile_xspan = (int64_t)w->tile_xcount * w->tile_xdim;
 				while (adj_tile_x < 0) adj_tile_x += tile_xspan;
@@ -712,13 +719,8 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 				if ((pixel_color_argb888 & 0xFF000000) == 0) {
 					continue; // zero alpha, don'd draw
 				}
-				// now, where on the screen to put it?
-				int64_t screen_y = tile_y + w->screen_ybegin - w->tile_ybegin;
-				int64_t screen_x = tile_x + w->screen_xbegin - w->tile_xbegin;
-				if (screen_x < 0 || screen_y < 0 || screen_x > screen_xcount || screen_y > screen_ycount) {
-					// destination pixel offscreen, do not draw
-					continue;
-				}
+
+				// Where's the pixel?
 				int64_t screen_offset = ((framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t)));
 				// Scale the video by the integer _scale
 				for (size_t i = 0; i < _scale; i++)
