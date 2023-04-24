@@ -99,7 +99,7 @@ struct UpdateWindowAdjustWindowViewCommand {
 
 struct UpdateWindowEnableCmd {
 	uint8_t window_index;
-	bool enabled;
+	uint8_t enabled;
 };
 
 #pragma pack(pop)
