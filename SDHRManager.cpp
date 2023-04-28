@@ -7,6 +7,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include <algorithm>
+#include <chrono>
 
 // below because "The declaration of a static data member in its class definition is not a definition"
 SDHRManager* SDHRManager::s_instance;
@@ -678,11 +679,22 @@ bool SDHRManager::ProcessCommands(void)
 
 void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 {
+	using std::chrono::high_resolution_clock;
+	using std::chrono::duration_cast;
+	using std::chrono::duration;
+	using std::chrono::milliseconds;
+
+	duration<double, std::milli> ms_double2;
+	auto t1 = high_resolution_clock::now();
+
 	// std::cout << "Entered DrawWindowsIntoBuffer" << std::endl;
 	// Set the scaling factor to fullscreen the video
 	auto _scalew = framebuffer->width / screen_xcount;
 	auto _scaleh = framebuffer->height / screen_ycount;
 	auto _scale = (_scaleh < _scalew ? _scaleh : _scalew);
+	_scale = 1;
+
+	auto fbmap = reinterpret_cast<uint32_t *>(framebuffer->map);
 
 	// Draw the windows into the passed-in framebuffer;
 	uint32_t pixel_color_argb888 = 0;
@@ -721,17 +733,21 @@ void SDHRManager::DrawWindowsIntoBuffer(modeset_buf* framebuffer)
 				}
 
 				// Where's the pixel?
-				int64_t screen_offset = ((framebuffer->stride * screen_y) + (screen_x * sizeof(uint32_t)));
+				int64_t screen_offset = ((framebuffer->stride * screen_y / 4) + (screen_x));
 				// Scale the video by the integer _scale
 				for (size_t i = 0; i < _scale; i++)
 				{
 					for (size_t j = 0; j < _scale; j++)
 					{
-						*(uint32_t*)&framebuffer->map[(screen_offset * _scale) + (i * sizeof(uint32_t)) + (j * framebuffer->stride)] = pixel_color_argb888;
+						fbmap[(screen_offset * _scale) + (i) + (j * framebuffer->stride / 4)] = pixel_color_argb888;
 					}
 				}
 			}
 		}
-		// std::cout << "Drew into buffer window " << window_index << std::endl;
+		std::cout << "Drew into buffer window " << window_index << std::endl;
 	}
+	auto t2 = high_resolution_clock::now();
+	duration<double, std::milli> ms_double = t2 - t1;
+	std::cout << "DrawWindowsIntoBuffer() duration: " << ms_double.count() << "ms\n";
+	std::cout << "Framebuffer write: " << ms_double2.count() << "ms\n";
 }
